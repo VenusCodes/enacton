@@ -17,24 +17,40 @@ function PaginationSection({
   const query = useSearchParams();
   const searchParams = new URLSearchParams(query);
 
-  function handlePrev() {
-    alert("Please update the code.");
-  }
-
-  function handleNext() {
-    alert("Please update the code.");
-  }
-
   // An function to create the resulting query string
   const createQueryString = React.useCallback(
     (currentPage: string, name: string, value: string) => {
       const params = new URLSearchParams(searchParams.toString());
-      params.set(name, value);
+      if (name === "page") {
+        params.set(name, value);
+      } else {
+        // to deal with page change on last pages of lower per page count to higher per page count
+        params.set(name, value);
+        params.set("page", "1");
+      }
 
       return currentPage + "?" + params.toString();
     },
     [searchParams]
   );
+
+  function handlePrev() {
+    if (pageNo > 1) {
+      const result = createQueryString("products", "page", `${pageNo - 1}`);
+      router.push(result);
+    } else {
+      alert("You can't go back any further");
+    }
+  }
+
+  function handleNext() {
+    if (pageNo < lastPage) {
+      const result = createQueryString("products", "page", `${pageNo + 1}`);
+      router.push(result);
+    } else {
+      alert("You can't go any further");
+    }
+  }
 
   //function to handle page size change
   function handlePageSizeChange(e: React.ChangeEvent<HTMLSelectElement>) {
