@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import React from "react";
 
 function PaginationSection({
@@ -13,7 +13,7 @@ function PaginationSection({
   pageSize: number;
 }) {
   const router = useRouter();
-
+  const pathname = usePathname();
   const query = useSearchParams();
   const searchParams = new URLSearchParams(query);
 
@@ -21,6 +21,8 @@ function PaginationSection({
   const createQueryString = React.useCallback(
     (currentPage: string, name: string, value: string) => {
       const params = new URLSearchParams(searchParams.toString());
+
+      // we can handlge page change as normal
       if (name === "page") {
         params.set(name, value);
       } else {
@@ -36,25 +38,27 @@ function PaginationSection({
 
   function handlePrev() {
     if (pageNo > 1) {
-      const result = createQueryString("products", "page", `${pageNo - 1}`);
+      const result = createQueryString(pathname, "page", `${pageNo - 1}`);
       router.push(result);
     } else {
+      // just an extra layer of safety
       alert("You can't go back any further");
     }
   }
 
   function handleNext() {
     if (pageNo < lastPage) {
-      const result = createQueryString("products", "page", `${pageNo + 1}`);
+      const result = createQueryString(pathname, "page", `${pageNo + 1}`);
       router.push(result);
     } else {
+      // just an extra layer of safety
       alert("You can't go any further");
     }
   }
 
   //function to handle page size change
   function handlePageSizeChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const result = createQueryString("products", "pageSize", e.target.value);
+    const result = createQueryString(pathname, "pageSize", e.target.value);
 
     router.push(result);
   }

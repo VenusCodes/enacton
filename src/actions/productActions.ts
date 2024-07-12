@@ -9,10 +9,15 @@ import { revalidatePath } from "next/cache";
 import { authOptions } from "@/utils/authOptions";
 import { cache } from "react";
 
-export async function getProducts(pageNo = 1, pageSize = DEFAULT_PAGE_SIZE) {
+export async function getProducts(
+  pageNo = 1,
+  pageSize = DEFAULT_PAGE_SIZE,
+  sortByInput = ""
+) {
   try {
     let products;
     let dbQuery = db.selectFrom("products").selectAll("products");
+    const [sortBy, sortOrder] = sortByInput?.split("-");
 
     // get the count of total number of records
     const countResult = await db
@@ -25,6 +30,7 @@ export async function getProducts(pageNo = 1, pageSize = DEFAULT_PAGE_SIZE) {
 
     products = await dbQuery
       .distinct()
+      .orderBy(sortBy !== "" ? sortBy : "id", sortOrder ?? "asc")
       .offset((pageNo - 1) * pageSize)
       .limit(pageSize)
       .execute();

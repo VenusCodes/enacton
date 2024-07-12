@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import React from "react";
 
 const sortingOptions = [
   { value: "price-asc", label: "Sort by price(asc)" },
@@ -13,8 +14,30 @@ const sortingOptions = [
 
 function SortBy() {
   const router = useRouter();
+  const pathname = usePathname();
   const params = useSearchParams();
   const searchParams = new URLSearchParams(params);
+
+  // An function to create the resulting query string
+  const createQueryString = React.useCallback(
+    (currentPage: string, name: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (name === "sortBy" && value) {
+        params.set(name, value);
+      } else {
+        params.delete(name);
+      }
+      return currentPage + "?" + params.toString();
+    },
+    [searchParams]
+  );
+
+  const handleSortingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const result = createQueryString(pathname, "sortBy", e.target.value);
+
+    router.push(result);
+  };
 
   return (
     <div className="text-black flex gap-2">
@@ -23,9 +46,7 @@ function SortBy() {
         name="sorting"
         id="sorting"
         value={String(searchParams.get("sortBy"))}
-        onChange={(e) => {
-          alert("Please update the code.");
-        }}
+        onChange={handleSortingChange}
       >
         <option value="">None</option>
         {sortingOptions.map((option, i) => {
