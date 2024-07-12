@@ -25,8 +25,10 @@ function SortBy() {
 
       if (name === "sortBy" && value) {
         params.set(name, value);
+        params.set("page", "1");
       } else {
         params.delete(name);
+        params.set("page", "1");
       }
       return currentPage + "?" + params.toString();
     },

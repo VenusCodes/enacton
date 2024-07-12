@@ -17,12 +17,24 @@ export default async function Products({
     page = 1,
     pageSize = DEFAULT_PAGE_SIZE,
     sortBy,
+    brand,
+    priceRangeTo,
+    gender,
+    discount,
+    occasion,
+    category,
   } = searchParams as any;
 
   const { products, lastPage, numOfResultsOnCurPage } = await getProducts(
     +page,
     +pageSize,
-    sortBy
+    sortBy,
+    brand,
+    priceRangeTo,
+    gender,
+    discount,
+    occasion,
+    category
   );
 
   const brands = await getBrands();

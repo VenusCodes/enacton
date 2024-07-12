@@ -13,7 +13,7 @@ function AddProduct() {
   const [categoriesOption, setCategoriesOption] = useState([]);
   const [occasionOption, setOccasionOption] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [imageUploading, setImageUploading] = useState(false);
   const router = useRouter();
   const {
     values: product,
@@ -41,9 +41,7 @@ function AddProduct() {
     },
     validationSchema: basicSchema,
 
-    onSubmit: async (values: any, actions) => {
-      alert("Please Update the Code");
-    },
+    onSubmit: async (values: any, actions) => {},
   });
 
   useEffect(() => {
@@ -114,12 +112,32 @@ function AddProduct() {
     });
   }
 
-  function handleFileInput(e) {
+  async function handleFileInput(e) {
     const file = e.target.files[0];
-    setValues({
-      ...product,
-      image_url: `/images/${file.name}`,
-    });
+
+    const formData = new FormData();
+    formData.append("image", file, file.name);
+
+    const requestOptions: any = {
+      method: "POST",
+      body: formData,
+      redirect: "follow",
+    };
+
+    setImageUploading(true);
+    fetch(
+      "https://api.imgbb.com/1/upload?key=0a09791000b6da5b5c0e4d921547c9a2",
+      requestOptions
+    )
+      .then((result) => result.json())
+      .then((result: any) => {
+        setValues({
+          ...product,
+          image_url: result?.data?.display_url,
+        });
+      })
+      .catch((error) => console.error(error))
+      .finally(() => setImageUploading(false));
   }
 
   function handleColorPicker(e) {
@@ -332,7 +350,12 @@ function AddProduct() {
           />
         </div>
         <button
-          disabled={isSubmitting}
+          disabled={
+            isSubmitting ||
+            Object.values(product)?.length < 1 ||
+            Object.values(errors)?.length > 0 ||
+            imageUploading
+          }
           type="submit"
           className="w-1/2 p-4 bg-white text-black"
         >
