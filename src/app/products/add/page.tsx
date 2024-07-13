@@ -92,17 +92,11 @@ function AddProduct() {
        */
       const res = await saveProduct(payload);
 
-      if (res?.error) {
-        /**
-         * Show an error toast if the response contains an error.
-         */
-        toast.error(res?.error);
-      } else {
-        /**
-         * Show a success toast and redirect to the products page if the response is successful.
-         */
+      if (res?.message === "success") {
         toast.success("Product added successfully");
-        router.replace("/products");
+        router.push("/products");
+      } else {
+        toast.error(res?.error);
       }
     },
   });

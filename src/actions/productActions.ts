@@ -182,7 +182,7 @@ export async function saveProduct(payload) {
       .execute();
 
     // Return the saved product and its categories
-    return { product, categories: payload.categories };
+    return { message: "success" };
   } catch (error) {
     // If the product could not be saved, return an error object
     return { error: "Could not save the product" };
@@ -242,6 +242,7 @@ export async function updateProduct(payload) {
         }))
       )
       .execute();
+    return { message: "success" };
   } catch (error) {
     // Return an error message if the update operation fails
     return { error: "Could not update the product" };
