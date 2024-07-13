@@ -4,7 +4,8 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ["loremflickr.com"],
+    // add third party domain to allow access to fetch assets and other things.
+    domains: ["loremflickr.com", "i.ibb.co"],
     // remotePatterns: [
     //   {
     //     protocol: "https",

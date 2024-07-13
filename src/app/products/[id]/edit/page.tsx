@@ -10,14 +10,13 @@ import {
   getProduct,
   getProductCategories,
   updateProduct,
-  updateProductCategories,
 } from "@/actions/productActions";
 import { useFormik } from "formik";
 import { useEffect, useState } from "react";
 import Select from "react-select";
 import { occasionOptions } from "../../../../../constant";
 import { notFound, useRouter } from "next/navigation";
-import { UpdateProducts } from "@/types";
+import { IOption, UpdateProducts } from "@/types";
 import { toast } from "react-toastify";
 
 function EditProduct({ params }: { params: { id: string } }) {
@@ -34,17 +33,29 @@ function EditProduct({ params }: { params: { id: string } }) {
   const [initialValues, setInitialValues] = useState({});
   const [error, setError] = useState(false);
 
+  /**
+   * Indicates whether an image is currently being uploaded.
+   */
+  const [imageUploading, setImageUploading] = useState(false);
+
   const router = useRouter();
+
+  /**
+   * The Formik hook for handling form state and validation.
+   */
   const {
-    values: product,
-    errors,
-    touched,
-    isSubmitting,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-    setValues,
+    values: product, // The current form values
+    errors, // The validation errors
+    touched, // Indicates whether a form field has been touched
+    isSubmitting, // Indicates whether the form is currently being submitted
+    handleChange, // The function to handle form field changes
+    handleBlur, // The function to handle form field blur events
+    handleSubmit, // The function to handle form submission
+    setValues, // The function to set form values
   } = useFormik({
+    /**
+     * The initial form values.
+     */
     initialValues: {
       name: "",
       description: "",
@@ -58,10 +69,60 @@ function EditProduct({ params }: { params: { id: string } }) {
       occasion: null,
       image_url: "",
     },
+
+    /**
+     * The Yup validation schema for form fields.
+     */
     validationSchema: basicSchema,
 
-    onSubmit: async (values, actions) => {
-      alert("Please update the code.");
+    /**
+     * The function to handle form submission.
+     * @param {Object} values - The form values.
+     */
+    onSubmit: async (values) => {
+      /**
+       * The payload to be sent to the server for updating the product.
+       */
+      const payload = {
+        id: +id,
+        name: values.name,
+        description: values.description,
+        old_price: values.old_price,
+        discount: values.discount,
+        rating: values.rating,
+        colors: values.colors,
+        brands:
+          "[" +
+          values.brands?.map((brand: IOption) => brand.value)?.toString() +
+          "]",
+        categories: values.categories?.map(
+          (category: IOption) => category.value
+        ),
+        gender: values.gender,
+        occasion: values.occasion
+          ?.map((occasion: IOption) => occasion.value)
+          ?.toString(),
+        image_url: values.image_url,
+        price: values.old_price - (values.old_price * values.discount) / 100,
+      };
+
+      /**
+       * The response from the server after updating the product.
+       */
+      const res = await updateProduct(payload);
+
+      /**
+       * Show an error toast if the response contains an error.
+       */
+      if (res?.error) {
+        toast.error(res?.error);
+      } else {
+        /**
+         * Show a success toast and redirect to the products page if the response is successful.
+         */
+        toast.success("Product updated successfully");
+        router.replace("/products");
+      }
     },
   });
 
@@ -129,7 +190,7 @@ function EditProduct({ params }: { params: { id: string } }) {
         gender: productArr.gender,
         occasion: initialOccasion,
         rating: +productArr.rating,
-        image_url: "",
+        image_url: productArr.image_url,
       };
       setValues(product);
       setInitialValues(product);
@@ -181,12 +242,46 @@ function EditProduct({ params }: { params: { id: string } }) {
     });
   }
 
+  /**
+   * Handle file input event for image upload.
+   * Appends the selected image to a FormData object and sends it to the imgbb API
+   * for uploading. Once the upload is complete, updates the product's image_url state.
+   *
+   * @param {Event} e - The file input event.
+   */
   function handleFileInput(e) {
+    // Get the selected file from the input event
     const file = e.target.files[0];
-    setValues({
-      ...product,
-      image_url: `/images/${file.name}`,
-    });
+
+    // Create a new FormData object and append the selected file to it
+    const formData = new FormData();
+    formData.append("image", file, file.name);
+
+    // Set up the request options for the imgbb API
+    const requestOptions: any = {
+      method: "POST",
+      body: formData,
+      redirect: "follow",
+    };
+
+    // Set the imageUploading state to true to indicate that the image is being uploaded
+    setImageUploading(true);
+
+    // Send the FormData to the imgbb API for uploading
+    fetch(
+      "https://api.imgbb.com/1/upload?key=0a09791000b6da5b5c0e4d921547c9a2",
+      requestOptions
+    )
+      .then((result) => result.json()) // Parse the response as JSON
+      .then((result: any) => {
+        // Update the product's image_url state with the URL of the uploaded image
+        setValues({
+          ...product,
+          image_url: result?.data?.display_url,
+        });
+      })
+      .catch((error) => console.error(error)) // Log any errors that occur during the upload
+      .finally(() => setImageUploading(false)); // Set the imageUploading state to false once the upload is complete
   }
 
   if (loading)
@@ -376,6 +471,17 @@ function EditProduct({ params }: { params: { id: string } }) {
             accept="image/*"
           />
         </div>
+
+        {product?.image_url && (
+          <div className="flex items-center gap-4 mb-4">
+            <img
+              src={product?.image_url}
+              alt="preview image"
+              style={{ height: "300px", width: "300px", objectFit: "inherit" }}
+            />
+          </div>
+        )}
+
         <button
           disabled={isSubmitting}
           type="submit"

@@ -116,3 +116,8 @@ export interface Database {
   reviews: Reviews;
   users: Users;
 }
+
+export interface IOption {
+  value: string | number;
+  label: string;
+}

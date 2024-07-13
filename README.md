@@ -34,19 +34,19 @@ To set up the project locally, follow these steps:
 
 #### Product Sorting and Filtering
 
-3. **Product Sorting**: Implement options for sorting products based on price, creation date (created_at), and rating.
-4. **Brand Filter**: Enable product filtering by the chosen brand and emphasize the selected brands within the respective tab.
+3. **[x] Product Sorting**: Implement options for sorting products based on price, creation date (created_at), and rating.
+4. **[x] Brand Filter**: Enable product filtering by the chosen brand and emphasize the selected brands within the respective tab.
 5. **Category Filter**: Allow product filtering by the selected category and highlight the chosen category within its designated tab.
-6. **Price Range Filter**: Provide the ability to filter products based on the selected price range and highlight the chosen range within its dedicated tab.
-7. **Occasion Filter**: Enable product filtering based on the selected occasion and highlight the chosen occasion within its specific tab.
-8. **Discount Filter**: Implement product filtering based on the selected discount and highlight the chosen discount within its dedicated tab.
-9. **URL Parameters**: Store all filter and sort options in the URL parameters to replicate the user's browsing state when sharing URLs.
+6. **[x] Price Range Filter**: Provide the ability to filter products based on the selected price range and highlight the chosen range within its dedicated tab.
+7. **[x] Occasion Filter**: Enable product filtering based on the selected occasion and highlight the chosen occasion within its specific tab.
+8. **[x] Discount Filter**: Implement product filtering based on the selected discount and highlight the chosen discount within its dedicated tab.
+9. **[x] URL Parameters**: Store all filter and sort options in the URL parameters to replicate the user's browsing state when sharing URLs.
 
 #### Product Operations (Create/Edit/Delete)
 
-10. **Create Product**: Allow users to crete product.
-11. **Edit Product**: Allow users to modify specific product details.
-12. **Delete Product**: Provide the functionality to remove a particular product from the list.
+10. **[x] Create Product**: Allow users to crete product.
+11. **[x] Edit Product**: Allow users to modify specific product details.
+12. **[x] Delete Product**: Provide the functionality to remove a particular product from the list.
 
 ### Delivery Expectations
 

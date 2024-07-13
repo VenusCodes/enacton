@@ -1,8 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 // import Select from "react-select";
 import { MultiSelect, Option } from "react-multi-select-component";
 import "rc-slider/assets/index.css";
@@ -10,52 +9,95 @@ import { occasionOptions } from "../../constant";
 import { useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useQueryParams } from "@/hooks/useQueryParams";
+import { IOption } from "@/types";
 const Select = dynamic(() => import("react-select"), { ssr: false });
 
-const discountOptions = [
+/**
+ * Discount options for the product list.
+ */
+const DISCOUNT_OPTIONS: IOption[] = [
   { value: "", label: "None" },
   { value: "0-5", label: "From 0% to 5%" },
   { value: "6-10", label: "From 6% to 10%" },
   { value: "11-15", label: "From 11 to 15%" },
 ];
 
+/**
+ * Filter component for the products page
+ * @param {Array} props.categories - The categories for the filter
+ * @param {Array} props.brands - The brands for the filter
+ */
 function Filter({ categories, brands }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useQueryParams();
 
-  const brandsOption: any[] = useMemo(() => {
-    return brands.map((brand: any) => ({
-      value: brand.id,
-      label: brand.name,
-    }));
+  /**
+   * The options for the brands filter
+   * @type {Array}
+   */
+  const brandsOption: IOption[] = useMemo(() => {
+    return brands.map(
+      (brand: any) =>
+        ({
+          value: brand.id,
+          label: brand.name,
+        } as IOption)
+    ) as IOption[];
   }, [brands]);
 
-  const categoriesOption: any[] = useMemo(() => {
-    return categories.map((category: any) => ({
-      value: category.id,
-      label: category.name,
-    }));
+  /**
+   * The options for the categories filter
+   * @type {Array}
+   */
+  const categoriesOption: IOption[] = useMemo(() => {
+    return categories.map(
+      (category: any) =>
+        ({
+          value: category.id,
+          label: category.name,
+        } as IOption)
+    ) as IOption[];
   }, [categories]);
 
-  const occasionOption: any[] = useMemo(() => {
+  /**
+   * The options for the occasion filter
+   * @type {Array}
+   */
+  const occasionOption: IOption[] = useMemo(() => {
     return occasionOptions.map((item) => {
       return {
         value: item,
         label: item,
-      };
-    });
+      } as IOption;
+    }) as IOption[];
   }, []);
 
+  /**
+   * The selected gender filter value
+   * @type {string}
+   */
   const [selectedGender, setSelectedGender] = useState(
     () => searchParams.get("gender") || ""
   );
+  /**
+   * The selected slider value
+   * @type {number}
+   */
   const [sliderValue, setSliderValue] = useState(
     () => searchParams.get("priceRangeTo") || 2000
   );
+  /**
+   * The selected discount filter value
+   * @type {string}
+   */
   const [discountValue, setDiscountValue] = useState(
     () => searchParams.get("discount") || ""
   );
+  /**
+   * The selected occasion filter value
+   * @type {Array}
+   */
   const [occasionValue, setOccasionValue] = useState(() => {
     if (searchParams.get("occasion")) {
       return searchParams
@@ -76,8 +118,21 @@ function Filter({ categories, brands }) {
     }
   });
 
+  /**
+   * Whether the slider value has changed
+   * @type {boolean}
+   */
   const [sliderChanged, setSliderChanged] = useState(false);
 
+  /**
+   * The selected categories filter value
+   * @type {Array}
+   */
+
+  /**
+   * The selected categories filter value
+   * @type {Array}
+   */
   const [categoriesSelected, setCategoriesSelected] = useState(() => {
     if (searchParams.get("category")) {
       return searchParams
@@ -88,8 +143,8 @@ function Filter({ categories, brands }) {
             return {
               value: +categoryId,
               label: categoriesOption.find(
-                (option) => option.value === +categoryId
-              ).label,
+                (option: IOption) => option.value === +categoryId
+              )?.label,
             };
           } else {
             return null;
@@ -100,6 +155,10 @@ function Filter({ categories, brands }) {
     }
   });
 
+  /**
+   * The selected brands filter value
+   * @type {Array}
+   */
   const [brandsSelected, setBrandsSelected] = useState(() => {
     if (searchParams.get("brand")) {
       return searchParams
@@ -109,8 +168,9 @@ function Filter({ categories, brands }) {
           if (brandsOption.find((option) => option.value === +brandId)) {
             return {
               value: +brandId,
-              label: brandsOption.find((option) => option.value === +brandId)
-                .label,
+              label: brandsOption.find(
+                (option: IOption) => option.value === +brandId
+              )?.label,
             };
           } else {
             return null;
@@ -124,11 +184,11 @@ function Filter({ categories, brands }) {
   const initialDiscountOptions = useMemo(() => {
     if (searchParams.get("discount")) {
       const value = searchParams.get("discount");
-      if (!value) return discountOptions[0];
+      if (!value) return DISCOUNT_OPTIONS[0];
       const [from, to] = value?.split("-");
       return { value, label: `From ${from}% to ${to}%` };
     } else {
-      return discountOptions[0];
+      return DISCOUNT_OPTIONS[0];
     }
   }, []);
 
@@ -140,8 +200,9 @@ function Filter({ categories, brands }) {
         .map((brandId) => {
           return {
             value: +brandId,
-            label: brandsOption.find((option) => option.value === +brandId)
-              .label,
+            label: brandsOption.find(
+              (option: IOption) => option.value === +brandId
+            )?.label,
           };
         });
     } else {
@@ -174,12 +235,21 @@ function Filter({ categories, brands }) {
     }
   }, [sliderValue]);
 
-  // An function to create the resulting query string
+  /**
+   * Creates a new query string by modifying the existing search parameters.
+   *
+   * @param {string} currentPage - The current page URL.
+   * @param {string} name - The name of the parameter to modify.
+   * @param {string} value - The new value for the parameter.
+   * @returns {string} The modified query string.
+   */
   const createQueryString = React.useCallback(
     (currentPage: string, name: string, value: string) => {
       const params = new URLSearchParams(searchParams.toString());
 
+      // If the value is provided, update the parameter or remove it.
       if (value) {
+        // If the parameter is one of the special ones, update it.
         if (
           [
             "brand",
@@ -195,31 +265,53 @@ function Filter({ categories, brands }) {
           params.delete(name);
         }
       } else {
+        // If no value is provided, remove the parameter.
         params.delete(name);
       }
+
+      // Always reset the page to 1 when modifying other parameters.
       params.set("page", "1");
+
       return currentPage + "?" + params.toString();
     },
     [searchParams]
   );
 
-  interface IBrandOption {
-    value: number;
-    label: string;
-  }
+  /**
+   * Handle the change of the brand select.
+   *
+   * @param {any} e - The event object.
+   */
   function handleBrandsSelect(e: any) {
+    // Update the state with the selected brands.
     setBrandsSelected(e);
-    const searchValue = e?.map((o: IBrandOption) => o.value)?.join(",");
 
+    // Get the values of the selected brands.
+    const searchValue = e?.map((o: IOption) => o.value)?.join(",");
+
+    // Create the modified query string.
     const result = createQueryString(pathname, "brand", searchValue);
+
+    // Redirect to the new page with the modified query string.
     router.push(result);
   }
 
+  /**
+   * Handle the change of the categories select.
+   *
+   * @param {any} e - The event object.
+   */
   function handleCategoriesSelected(e: any) {
+    // Update the state with the selected categories.
     setCategoriesSelected(e);
 
+    // Get the values of the selected categories.
     const searchValue = e?.map((o: any) => o.value)?.join(",");
+
+    // Create the modified query string.
     const result = createQueryString(pathname, "category", searchValue);
+
+    // Redirect to the new page with the modified query string.
     router.push(result);
   }
 
@@ -372,11 +464,11 @@ function Filter({ categories, brands }) {
         <span>Filter By discount</span>
         <Select
           className="flex-1 text-black"
-          options={discountOptions}
+          options={DISCOUNT_OPTIONS}
           name="discount"
           defaultValue={initialDiscountOptions}
           onChange={handleDiscount}
-          value={discountOptions?.find((x: any) => x.value === discountValue)}
+          value={DISCOUNT_OPTIONS?.find((x: any) => x.value === discountValue)}
         />
       </div>
     </div>

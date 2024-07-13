@@ -10,17 +10,18 @@ import { authOptions } from "@/utils/authOptions";
 import { cache } from "react";
 
 /**
- * Gets a list of products that match the given filters.
- * @param pageNo The page number to retrieve. Defaults to 1.
- * @param pageSize The number of products to retrieve per page. Defaults to 20.
- * @param sortByInput The column and order to sort the products by. Defaults to an empty string.
- * @param brand A comma-separated string of brand IDs to filter by. Defaults to an empty string.
- * @param priceRangeTo The maximum price of the products to filter by. Defaults to 2000.
- * @param gender The gender of the products to filter by. Defaults to an empty string.
- * @param discount The discount range of the products to filter by. Defaults to an empty string.
- * @param occasion The occasion of the products to filter by. Defaults to an empty string.
- * @param category The category of the products to filter by. Defaults to an empty string.
- * @returns An object containing the products, the total count of products, the last page number, and the number of products on the current page.
+ * Retrieves a list of products from the server based on the given filters.
+ *
+ * @param {number} page - The page number to retrieve. Defaults to 1.
+ * @param {number} pageSize - The number of products to retrieve per page. Defaults to DEFAULT_PAGE_SIZE.
+ * @param {string} sortBy - The column and order to sort the products by. Defaults to an empty string.
+ * @param {string} brand - A comma-separated string of brand IDs to filter by. Defaults to an empty string.
+ * @param {string} priceRangeTo - The maximum price of the products to filter by. Defaults to "2000".
+ * @param {string} gender - The gender of the products to filter by. Defaults to an empty string.
+ * @param {string} discount - The discount range of the products to filter by. Defaults to an empty string.
+ * @param {string} occasion - The occasion of the products to filter by. Defaults to an empty string.
+ * @param {string} category - The category of the products to filter by. Defaults to an empty string.
+ * @returns {Promise<{ products: Product[], lastPage: number, numOfResultsOnCurPage: number }>} An object containing the products, the last page number, and the number of products on the current page.
  */
 export async function getProducts(
   pageNo = 1,
@@ -35,18 +36,25 @@ export async function getProducts(
 ) {
   try {
     let result;
-    let dbQuery = db.selectFrom("products").selectAll("products");
 
+    // Construct the DB query to select products and concatenate category IDs
+    let dbQuery = db
+      .selectFrom("products")
+      .selectAll(
+        "products",
+        sql`GROUP_CONCAT(product_categories.category_id ORDER BY  product_categories.id SEPARATOR ',') AS categories`
+      )
+      ?.leftJoin(
+        "product_categories",
+        "products.id",
+        "product_categories.product_id"
+      )
+      ?.groupBy("products.id");
     // Parse the sortByInput into a column and order
     const [sortBy, sortOrder] = sortByInput?.split("-");
 
     // Get the distinct products from the database
     result = dbQuery.distinct();
-
-    // Filter the products by categories
-    if (category) {
-      //
-    }
 
     // Sort the products by the given column and order
     if (sortBy && sortOrder) {
@@ -71,6 +79,11 @@ export async function getProducts(
       const [lowerLimit, upperLimit] = discount.split("-");
       result = result.where("discount", "<=", upperLimit);
       result = result.where("discount", ">=", lowerLimit);
+    }
+
+    //Filter the products by category
+    if (category && category.length > 0) {
+      result = result.where("category_id", "in", category.split(","));
     }
 
     // Filter the products by brand
@@ -123,6 +136,115 @@ export async function getProducts(
     return { products, count, lastPage, numOfResultsOnCurPage };
   } catch (error) {
     throw error;
+  }
+}
+
+/**
+ * Saves a new product to the database, including its categories.
+ *
+ * @param {Object} payload - The payload containing the product details.
+ * @param {string} payload.name - The name of the product.
+ * @param {string} payload.description - The description of the product.
+ * @param {number} payload.price - The price of the product.
+ * @param {number} payload.rating - The rating of the product.
+ * @param {number} payload.old_price - The old_price of the product.
+ * @param {number} payload.discount - The discount of the product.
+ * @param {string} payload.image_url - The image URL of the product.
+ * @param {string} payload.brand - The brand of the product.
+ * @param {string} payload.occasion - The occasion of the product.
+ * @param {Array<number>} payload.categories - The categories of the product.
+ * @returns {Promise<Object>} The saved product and its categories.
+ * @throws {Error} If the product could not be saved.
+ */
+export async function saveProduct(payload) {
+  try {
+    // Create a copy of the payload and remove the categories field
+    const saveProductPayload = JSON.parse(JSON.stringify(payload));
+    delete saveProductPayload.categories;
+
+    // Insert the product into the database and get its ID
+    const product = await db
+      .insertInto("products")
+      .values(saveProductPayload)
+      .executeTakeFirst();
+    // Get the ID of the inserted product
+    const productId = product.insertId;
+
+    // Insert the product's categories into the database
+    await db
+      .insertInto("product_categories")
+      .values(
+        payload.categories?.map((category: number) => ({
+          product_id: productId,
+          category_id: category,
+        }))
+      )
+      .execute();
+
+    // Return the saved product and its categories
+    return { product, categories: payload.categories };
+  } catch (error) {
+    // If the product could not be saved, return an error object
+    return { error: "Could not save the product" };
+  }
+}
+
+/**
+ * Updates a product and its categories in the database.
+ *
+ * This function first updates the product's details excluding its categories and id.
+ * Then, it deletes the existing product categories from the database and inserts the new ones.
+ *
+ * @param {Object} payload - The product data to update.
+ * @param {number} payload.id - The ID of the product to update.
+ * @param {string} payload.name - The name of the product.
+ * @param {string} payload.description - The description of the product.
+ * @param {number} payload.price - The price of the product.
+ * @param {number} payload.rating - The rating of the product.
+ * @param {number} payload.old_price - The old_price of the product.
+ * @param {number} payload.discount - The discount of the product.
+ * @param {string} payload.image_url - The image URL of the product.
+ * @param {string} payload.brand - The brand of the product.
+ * @param {string} payload.occasion - The occasion of the product.
+ * @param {Array<number>} payload.categories - The categories of the product.
+ * @returns {Promise<Object>} The saved product and its categories.
+ * @throws {Error} If the product could not be saved.
+ */
+export async function updateProduct(payload) {
+  try {
+    // Create a deep copy of the payload to safely modify it
+    const updateProductPayload = JSON.parse(JSON.stringify(payload));
+
+    // Remove categories and id from the product payload as they're handled separately
+    delete updateProductPayload.categories;
+    delete updateProductPayload.id;
+
+    // Update the product details in the 'products' table
+    await db
+      .updateTable("products")
+      .set(updateProductPayload)
+      .where("id", "=", payload.id)
+      .executeTakeFirst();
+
+    // Delete the product's current categories to replace them with the new ones
+    await db
+      .deleteFrom("product_categories")
+      .where("product_id", "=", payload.id)
+      .execute();
+
+    // Insert the new categories for the product
+    await db
+      .insertInto("product_categories")
+      .values(
+        payload.categories?.map((category: number) => ({
+          product_id: payload.id,
+          category_id: category,
+        }))
+      )
+      .execute();
+  } catch (error) {
+    // Return an error message if the update operation fails
+    return { error: "Could not update the product" };
   }
 }
 

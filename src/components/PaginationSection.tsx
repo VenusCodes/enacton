@@ -36,30 +36,50 @@ function PaginationSection({
     [searchParams]
   );
 
+  /**
+   * Handles the previous page button click event.
+   * If the current page is greater than 1, it navigates to the previous page.
+   * Otherwise, it displays an alert message.
+   */
   function handlePrev() {
     if (pageNo > 1) {
+      // Generate the query string for the previous page
       const result = createQueryString(pathname, "page", `${pageNo - 1}`);
+      // Navigate to the previous page
       router.push(result);
     } else {
-      // just an extra layer of safety
+      // Just an extra layer of safety
       alert("You can't go back any further");
     }
   }
 
+  /**
+   * Handles the next page button click event.
+   * If the current page is less than the last page, it navigates to the next page.
+   * Otherwise, it displays an alert message.
+   */
   function handleNext() {
     if (pageNo < lastPage) {
+      // Generate the query string for the next page
       const result = createQueryString(pathname, "page", `${pageNo + 1}`);
+      // Navigate to the next page
       router.push(result);
     } else {
-      // just an extra layer of safety
+      // Just an extra layer of safety
       alert("You can't go any further");
     }
   }
 
-  //function to handle page size change
+  /**
+   * Handles the page size change event.
+   * It generates the query string with the new page size and navigates to the new page.
+   *
+   * @param {React.ChangeEvent<HTMLSelectElement>} e - The event object.
+   */
   function handlePageSizeChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    // Generate the query string with the new page size
     const result = createQueryString(pathname, "pageSize", e.target.value);
-
+    // Navigate to the new page
     router.push(result);
   }
 

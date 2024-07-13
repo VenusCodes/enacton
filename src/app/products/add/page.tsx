@@ -7,25 +7,40 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { occasionOptions } from "../../../../constant";
 import Select from "react-select";
+import { saveProduct } from "@/actions/productActions";
+import { toast } from "react-toastify";
+import { IOption } from "@/types";
 
 function AddProduct() {
   const [brandsOption, setBrandsOption] = useState([]);
   const [categoriesOption, setCategoriesOption] = useState([]);
   const [occasionOption, setOccasionOption] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  /**
+   * Indicates whether an image is currently being uploaded.
+   */
   const [imageUploading, setImageUploading] = useState(false);
+
   const router = useRouter();
+
+  /**
+   * The Formik hook for handling form state and validation.
+   */
   const {
-    values: product,
-    errors,
-    touched,
-    isSubmitting,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-    setValues,
+    values: product, // The current form values
+    errors, // The validation errors
+    touched, // Indicates whether a form field has been touched
+    isSubmitting, // Indicates whether the form is currently being submitted
+    handleChange, // The function to handle form field changes
+    handleBlur, // The function to handle form field blur events
+    handleSubmit, // The function to handle form submission
+    setValues, // The function to set form values
     resetForm,
   }: any = useFormik({
+    /**
+     * The initial form values.
+     */
     initialValues: {
       name: "",
       description: "",
@@ -39,9 +54,57 @@ function AddProduct() {
       occasion: null,
       image_url: "",
     },
+
+    /**
+     * The Yup validation schema for form fields.
+     */
     validationSchema: basicSchema,
 
-    onSubmit: async (values: any, actions) => {},
+    /**
+     * The function to handle form submission.
+     * @param {Object} values - The form values.
+     */
+    onSubmit: async (values: any, actions) => {
+      const payload = {
+        name: values.name,
+        description: values.description,
+        old_price: values.old_price,
+        discount: values.discount,
+        rating: values.rating,
+        colors: values.colors,
+        brands:
+          "[" +
+          values.brands?.map((brand: IOption) => brand.value)?.toString() +
+          "]",
+        categories: values.categories?.map(
+          (category: IOption) => category.value
+        ),
+        gender: values.gender,
+        occasion: values.occasion
+          ?.map((occasion: IOption) => occasion.value)
+          ?.toString(),
+        image_url: values.image_url,
+        price: values.old_price - (values.old_price * values.discount) / 100,
+      };
+
+      /**
+       * The response from the server after saving the product.
+       */
+      const res = await saveProduct(payload);
+
+      if (res?.error) {
+        /**
+         * Show an error toast if the response contains an error.
+         */
+        toast.error(res?.error);
+      } else {
+        /**
+         * Show a success toast and redirect to the products page if the response is successful.
+         */
+        toast.success("Product added successfully");
+        router.replace("/products");
+      }
+    },
   });
 
   useEffect(() => {
@@ -112,32 +175,46 @@ function AddProduct() {
     });
   }
 
+  /**
+   * Handles file input for image upload.
+   * Appends the selected image to a FormData object and sends it to the imgbb API
+   * for uploading. Once the upload is complete, updates the product's image_url state.
+   *
+   * @param {Event} e - The file input event.
+   */
   async function handleFileInput(e) {
+    // Get the selected file from the input event
     const file = e.target.files[0];
 
+    // Create a new FormData object and append the selected file to it
     const formData = new FormData();
     formData.append("image", file, file.name);
 
+    // Set up the request options for the imgbb API
     const requestOptions: any = {
       method: "POST",
       body: formData,
       redirect: "follow",
     };
 
+    // Set the imageUploading state to true to indicate that the image is being uploaded
     setImageUploading(true);
+
+    // Send the FormData to the imgbb API for uploading
     fetch(
       "https://api.imgbb.com/1/upload?key=0a09791000b6da5b5c0e4d921547c9a2",
       requestOptions
     )
-      .then((result) => result.json())
+      .then((result) => result.json()) // Parse the response as JSON
       .then((result: any) => {
+        // Update the product's image_url state with the URL of the uploaded image
         setValues({
           ...product,
           image_url: result?.data?.display_url,
         });
       })
-      .catch((error) => console.error(error))
-      .finally(() => setImageUploading(false));
+      .catch((error) => console.error(error)) // Log any errors that occur during the upload
+      .finally(() => setImageUploading(false)); // Set the imageUploading state to false once the upload is complete
   }
 
   function handleColorPicker(e) {
@@ -349,6 +426,15 @@ function AddProduct() {
             accept="image/*"
           />
         </div>
+        {product?.image_url && (
+          <div className="flex items-center gap-4 mb-4">
+            <img
+              src={product?.image_url}
+              alt="preview image"
+              style={{ height: "300px", width: "300px", objectFit: "inherit" }}
+            />
+          </div>
+        )}
         <button
           disabled={
             isSubmitting ||

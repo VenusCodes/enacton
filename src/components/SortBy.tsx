@@ -3,6 +3,9 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import React from "react";
 
+/**
+ * Sorting options for the product list.
+ */
 const sortingOptions = [
   { value: "price-asc", label: "Sort by price(asc)" },
   { value: "price-desc", label: "Sort by price(desc)" },
@@ -12,11 +15,14 @@ const sortingOptions = [
   { value: "rating-desc", label: "Sort by rating (desc)" },
 ];
 
+/**
+ * Component to allow sorting of the product list.
+ */
 function SortBy() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useSearchParams();
-  const searchParams = new URLSearchParams(params);
+  const router = useRouter(); // Router instance from Next.js
+  const pathname = usePathname(); // Current pathname
+  const params = useSearchParams(); // Search parameters
+  const searchParams = new URLSearchParams(params); // Parsed search parameters
 
   // An function to create the resulting query string
   const createQueryString = React.useCallback(
@@ -25,20 +31,24 @@ function SortBy() {
 
       if (name === "sortBy" && value) {
         params.set(name, value);
-        params.set("page", "1");
       } else {
         params.delete(name);
-        params.set("page", "1");
       }
+
+      params.set("page", "1"); // Always reset page to 1 when changing things in sort
       return currentPage + "?" + params.toString();
     },
     [searchParams]
   );
 
+  /**
+   * Handle change of sorting option.
+   * @param e - The event object.
+   */
   const handleSortingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const result = createQueryString(pathname, "sortBy", e.target.value);
 
-    router.push(result);
+    router.push(result); // Redirect to new page with updated sorting option
   };
 
   return (
