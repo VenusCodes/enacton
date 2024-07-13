@@ -45,7 +45,13 @@ function ProductRow({
         <td>
           <div className="flex flex-col gap-2">
             {productCategories.map((category, i) => {
-              return <span key={i}>{category.name}</span>;
+              return (
+                <span
+                  key={i}
+                >
+                  {category.name}
+                </span>
+              );
             })}
           </div>
         </td>

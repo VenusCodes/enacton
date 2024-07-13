@@ -32,14 +32,12 @@ export default async function Products({
     +page,
     +pageSize,
     sortBy,
-    // Convert the brand input to an array of strings
-    brand?.split(","),
+    brand,
     priceRangeTo,
     gender,
     discount,
     occasion,
-    // Convert the category input to an array of strings
-    category?.split(",")
+    category
   );
 
   // Retrieve a list of brands from the server
